@@ -1,20 +1,29 @@
 import hashlib
+import json
+import os
 from datetime import date
 from db import get_connection
 
-# ================= АВТОРИЗАЦИЯ =================
 def hash_password(password: str) -> str:
     return hashlib.sha256(password.encode('utf-8')).hexdigest()
 
-def register_user(login: str, password: str, db_path="fitness.db"):
+def register_full_user(login, password, weight, height, age, gender, activity, target_calories=None, db_path="fitness.db"):
     if not login or len(login.strip()) < 3:
         raise ValueError("Логин должен быть не короче 3 символов")
     if len(password) < 6:
         raise ValueError("Пароль должен быть не короче 6 символов")
+    if weight <= 0 or height <= 0 or age <= 0:
+        raise ValueError("Вес, рост и возраст должны быть положительными числами")
+
     conn = get_connection(db_path)
     try:
         with conn:
-            conn.execute("INSERT INTO users(login, password_hash) VALUES (?, ?)", (login.strip(), hash_password(password)))
+            # Если пользователь ввел свою норму, сохраняем ее в поле goal
+            goal_to_save = str(target_calories) if target_calories and target_calories > 0 else "поддержание"
+            conn.execute(
+                "INSERT INTO users(login, password_hash, weight, height, age, gender, activity_level, goal) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (login.strip(), hash_password(password), weight, height, age, gender, activity, goal_to_save)
+            )
     except Exception:
         raise ValueError("Пользователь с таким логином уже существует")
     finally:
@@ -28,22 +37,46 @@ def login_user(login: str, password: str, db_path="fitness.db") -> int:
         raise ValueError("Неверный логин или пароль")
     return row["id"]
 
-def update_user_profile(user_id: int, weight: float, height: float, age: int, gender: str, activity: str, db_path="fitness.db"):
-    conn = get_connection(db_path)
-    with conn:
-        conn.execute("UPDATE users SET weight=?, height=?, age=?, gender=?, activity_level=? WHERE id=?",
-                     (weight, height, age, gender, activity, user_id))
-    conn.close()
-
 def get_user_profile(user_id: int, db_path="fitness.db") -> dict:
     conn = get_connection(db_path)
-    row = conn.execute("SELECT weight, height, age, gender, activity_level FROM users WHERE id=?", (user_id,)).fetchone()
+    row = conn.execute("SELECT weight, height, age, gender, activity_level, goal FROM users WHERE id=?", (user_id,)).fetchone()
     conn.close()
     return dict(row) if row else {}
 
-# ================= ПИТАНИЕ =================
+def calculate_norm(weight: float, height: float, age: int, gender: str, activity: str, goal: str = "поддержание") -> float:
+    # Проверяем, не ввел ли пользователь свою норму (сохраненную в goal)
+    try:
+        custom_cal = float(goal)
+        if custom_cal > 0:
+            return custom_cal
+    except (ValueError, TypeError):
+        pass # Если это не число, считаем по формуле
+
+    if weight <= 0 or height <= 0 or age <= 0: return 0
+    if gender.lower() in ["м", "муж", "мужской"]:
+        bmr = 10 * weight + 6.25 * height - 5 * age + 5
+    else:
+        bmr = 10 * weight + 6.25 * height - 5 * age - 161
+    
+    mults = {"низкая": 1.2, "средняя": 1.55, "высокая": 1.725}
+    base_norm = bmr * mults.get(activity, 1.2)
+    
+    return base_norm
+
+def delete_user(user_id: int, db_path="fitness.db"):
+    conn = get_connection(db_path)
+    with conn:
+        conn.execute("DELETE FROM meal_entries WHERE user_id=?", (user_id,))
+        conn.execute("DELETE FROM schedule WHERE user_id=?", (user_id,))
+        conn.execute("DELETE FROM workouts WHERE user_id=?", (user_id,))
+        templates = conn.execute("SELECT id FROM workout_templates WHERE user_id=?", (user_id,)).fetchall()
+        for t in templates:
+            conn.execute("DELETE FROM template_exercises WHERE template_id=?", (t["id"],))
+        conn.execute("DELETE FROM workout_templates WHERE user_id=?", (user_id,))
+        conn.execute("DELETE FROM users WHERE id=?", (user_id,))
+    conn.close()
+
 def add_food(name: str, cal: float, prot: float, fat: float, carbs: float, db_path="fitness.db"):
-    if not name.strip(): raise ValueError("Название обязательно")
     conn = get_connection(db_path)
     with conn:
         conn.execute("INSERT INTO foods(name, calories_per_100g, protein, fat, carbs) VALUES (?, ?, ?, ?, ?)", (name.strip(), cal, prot, fat, carbs))
@@ -55,8 +88,15 @@ def get_all_foods(db_path="fitness.db"):
     conn.close()
     return [dict(r) for r in rows]
 
+def search_foods(query: str, db_path="fitness.db"):
+    if not query:
+        return get_all_foods(db_path)
+    conn = get_connection(db_path)
+    rows = conn.execute("SELECT * FROM foods WHERE LOWER(name) LIKE LOWER(?) ORDER BY name LIMIT 15", (f"%{query}%",)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
 def add_meal(user_id: int, food_id: int, weight_grams: float, meal_type: str, db_path="fitness.db"):
-    if weight_grams <= 0: raise ValueError("Вес должен быть больше 0")
     conn = get_connection(db_path)
     with conn:
         conn.execute("INSERT INTO meal_entries(user_id, food_id, date, weight_grams, meal_type) VALUES (?, ?, ?, ?, ?)",
@@ -80,18 +120,21 @@ def get_day_nutrition(user_id: int, db_path="fitness.db") -> dict:
         total["carbs"] += r["carbs"] * k
     return total
 
-def calculate_norm(weight: float, height: float, age: int, gender: str, activity: str) -> float:
-    if weight <= 0 or height <= 0 or age <= 0: return 0
-    if gender.lower() in ["м", "муж", "мужской"]:
-        bmr = 10 * weight + 6.25 * height - 5 * age + 5
-    else:
-        bmr = 10 * weight + 6.25 * height - 5 * age - 161
-    mults = {"низкая": 1.2, "средняя": 1.55, "высокая": 1.725}
-    return bmr * mults.get(activity, 1.2)
+def seed_foods(db_path="fitness.db"):
+    conn = get_connection(db_path)
+    count = conn.execute("SELECT COUNT(*) AS c FROM foods").fetchone()["c"]
+    if count == 0:
+        json_path = os.path.join("data", "foods.json")
+        if os.path.exists(json_path):
+            with open(json_path, "r", encoding="utf-8") as f:
+                foods = json.load(f)
+            with conn:
+                for food in foods:
+                    conn.execute("INSERT INTO foods(name, calories_per_100g, protein, fat, carbs) VALUES (?, ?, ?, ?, ?)",
+                                 (food["name"], food["cal"], food["prot"], food["fat"], food["carbs"]))
+    conn.close()
 
-# ================= ТРЕНИРОВКИ =================
 def create_template(user_id: int, name: str, db_path="fitness.db") -> int:
-    if not name.strip(): raise ValueError("Название обязательно")
     conn = get_connection(db_path)
     with conn:
         cur = conn.execute("INSERT INTO workout_templates(user_id, name) VALUES (?, ?)", (user_id, name.strip()))
@@ -114,23 +157,18 @@ def set_schedule_day(user_id: int, day_of_week: int, template_id: int, db_path="
 
 def get_schedule(user_id: int, db_path="fitness.db") -> dict:
     conn = get_connection(db_path)
-    rows = conn.execute("""
-        SELECT s.day_of_week, t.name FROM schedule s
-        JOIN workout_templates t ON t.id = s.template_id WHERE s.user_id = ?
-    """, (user_id,)).fetchall()
+    rows = conn.execute("SELECT s.day_of_week, t.name FROM schedule s JOIN workout_templates t ON t.id = s.template_id WHERE s.user_id = ?", (user_id,)).fetchall()
     conn.close()
     return {r["day_of_week"]: r["name"] for r in rows}
 
 def get_recommendations(user_id: int, db_path="fitness.db") -> list:
     conn = get_connection(db_path)
     recs = []
-    user = conn.execute("SELECT weight, height, age, gender, activity_level FROM users WHERE id=?", (user_id,)).fetchone()
+    user = conn.execute("SELECT weight, height, age, gender, activity_level, goal FROM users WHERE id=?", (user_id,)).fetchone()
     if user and user["weight"]:
-        norm = calculate_norm(user["weight"], user["height"], user["age"], user["gender"], user["activity_level"] or "низкая")
+        norm = calculate_norm(user["weight"], user["height"], user["age"], user["gender"], user["activity_level"] or "низкая", user["goal"])
         today = get_day_nutrition(user_id, db_path)
         if norm > 0 and today["cal"] > 0 and today["cal"] < norm * 0.8:
             recs.append("Вы недоедаете. Это может замедлить прогресс.")
-        if norm == 0:
-            recs.append("Заполните профиль (вес, рост), чтобы мы могли рассчитать вашу норму калорий.")
     conn.close()
     return recs if recs else ["Всё отлично! Продолжайте в том же духе."]

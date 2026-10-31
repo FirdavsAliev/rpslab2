@@ -2,17 +2,13 @@ import sqlite3
 
 DB_PATH = "fitness.db"
 
-
 def get_connection(path=DB_PATH):
-    """Открывает соединение с БД и включает поддержку внешних ключей."""
     conn = sqlite3.connect(path)
     conn.execute("PRAGMA foreign_keys = ON")
     conn.row_factory = sqlite3.Row
     return conn
 
-
 def init_db(path=DB_PATH):
-    """Создаёт все таблицы, если их еще нет."""
     conn = get_connection(path)
     with conn:
         conn.executescript("""
@@ -24,7 +20,8 @@ def init_db(path=DB_PATH):
             height REAL,
             age INTEGER,
             gender VARCHAR(10),
-            activity_level VARCHAR(20)
+            activity_level VARCHAR(20),
+            goal VARCHAR(20) DEFAULT 'поддержание'
         );
 
         CREATE TABLE IF NOT EXISTS exercises (
@@ -93,8 +90,3 @@ def init_db(path=DB_PATH):
         );
         """)
     conn.close()
-    print(f"База данных инициализирована по пути: {path}")
-
-
-if __name__ == "__main__":
-    init_db()
