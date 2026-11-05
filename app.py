@@ -3,10 +3,8 @@ from tkinter import ttk, messagebox
 import logic
 import db
 
-BG_COLOR = "#F2F2F7"
-CARD_COLOR = "#FFFFFF"
-ACCENT_COLOR = "#007AFF"
-GRAY_TEXT = "#8E8E93"
+import styles
+from styles import BG_COLOR, CARD_COLOR, ACCENT_COLOR, GRAY_TEXT
 
 class FitnessApp:
     def __init__(self, root):
