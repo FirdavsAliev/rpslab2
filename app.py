@@ -24,6 +24,11 @@ class FitnessApp:
         for widget in self.root.winfo_children():
             widget.destroy()
 
+    def refresh_exercises(self):
+        self.exercises_listbox.delete(0, tk.END)
+        for ex in logic.get_all_exercises():
+            self.exercises_listbox.insert(tk.END, ex["name"])
+
     def _create_input(self, parent, label, show=None):
         tk.Label(parent, text=label, bg=BG_COLOR, font=("Helvetica", 12)).pack(anchor="w", pady=(5, 0))
         entry = tk.Entry(parent, font=("Helvetica", 14), bg="white", show=show if show else "")
@@ -217,18 +222,82 @@ class FitnessApp:
     def build_nutrition_tab(self):
         frame = tk.Frame(self.tab_nutrition, bg=BG_COLOR, padx=15, pady=15)
         frame.pack(fill="both", expand=True)
+        
         tk.Label(frame, text="Добавить еду", bg=BG_COLOR, font=("Helvetica", 14, "bold")).pack(anchor="w")
+        
+        # Живой поиск
         tk.Label(frame, text="Поиск продукта:", bg=BG_COLOR).pack(anchor="w")
         self.food_combo = ttk.Combobox(frame, font=("Helvetica", 12))
         self.food_combo.pack(fill="x", pady=5)
         self.food_combo.bind('<KeyRelease>', self.update_food_suggestions)
+
         tk.Label(frame, text="Вес (грамм):", bg=BG_COLOR).pack(anchor="w")
         self.weight_entry = tk.Entry(frame, font=("Helvetica", 14), bg="white")
         self.weight_entry.pack(fill="x", pady=5, ipady=5)
-        tk.Button(frame, text="Добавить в дневник", command=self.add_meal, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=10, ipady=8)
+        
+        tk.Button(frame, text="Добавить в дневник", command=self.add_meal, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=5, ipady=8)
+
+        # --- НОВОЕ: Добавление своего продукта ---
+        tk.Label(frame, text="Не нашли продукт? Добавьте свой (на 100 г):", bg=BG_COLOR, font=("Helvetica", 10, "italic")).pack(anchor="w", pady=(15,0))
+        
+        f_frame = tk.Frame(frame, bg=BG_COLOR)
+        f_frame.pack(fill="x", pady=5)
+        
+        self.new_food_name = tk.Entry(f_frame, width=15, font=("Helvetica", 10))
+        self.new_food_name.insert(0, "Название")
+        self.new_food_name.pack(side="left", padx=2)
+        
+        self.new_food_cal = tk.Entry(f_frame, width=5, font=("Helvetica", 10))
+        self.new_food_cal.insert(0, "Ккал")
+        self.new_food_cal.pack(side="left", padx=2)
+
+        self.new_food_prot = tk.Entry(f_frame, width=5, font=("Helvetica", 10))
+        self.new_food_prot.insert(0, "Б")
+        self.new_food_prot.pack(side="left", padx=2)
+
+        self.new_food_fat = tk.Entry(f_frame, width=5, font=("Helvetica", 10))
+        self.new_food_fat.insert(0, "Ж")
+        self.new_food_fat.pack(side="left", padx=2)
+
+        self.new_food_carb = tk.Entry(f_frame, width=5, font=("Helvetica", 10))
+        self.new_food_carb.insert(0, "У")
+        self.new_food_carb.pack(side="left", padx=2)
+
+        tk.Button(frame, text="Сохранить свой продукт", command=self.add_custom_food, bg="gray", fg="white", bd=0).pack(fill="x", pady=5)
+
         self.nutrition_summary = tk.Label(frame, text="", bg=CARD_COLOR, font=("Helvetica", 12), justify="left", padx=10, pady=10)
         self.nutrition_summary.pack(fill="x", pady=10)
         self.update_nutrition_summary()
+
+    def add_custom_food(self):
+        try:
+            name = self.new_food_name.get().strip()
+            if not name or name == "Название":
+                messagebox.showwarning("Внимание", "Введите название продукта")
+                return
+            
+            cal = float(self.new_food_cal.get() or 0)
+            prot = float(self.new_food_prot.get() or 0)
+            fat = float(self.new_food_fat.get() or 0)
+            carb = float(self.new_food_carb.get() or 0)
+            
+            logic.add_food(name, cal, prot, fat, carb)
+            self.update_food_suggestions(None) # Обновляем список
+            messagebox.showinfo("Успех", f"Продукт '{name}' добавлен в базу!")
+            
+            # Очищаем поля
+            self.new_food_name.delete(0, tk.END)
+            self.new_food_name.insert(0, "Название")
+            self.new_food_cal.delete(0, tk.END)
+            self.new_food_cal.insert(0, "Ккал")
+            self.new_food_prot.delete(0, tk.END)
+            self.new_food_prot.insert(0, "Б")
+            self.new_food_fat.delete(0, tk.END)
+            self.new_food_fat.insert(0, "Ж")
+            self.new_food_carb.delete(0, tk.END)
+            self.new_food_carb.insert(0, "У")
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Проверьте данные: {str(e)}")
 
     def update_food_suggestions(self, event):
         query = self.food_combo.get()
@@ -271,19 +340,25 @@ class FitnessApp:
         frame = tk.Frame(self.tab_workouts, bg=BG_COLOR, padx=15, pady=15)
         frame.pack(fill="both", expand=True)
         
-        # Создание шаблона
+        # Создание шаблона тренировки
         tk.Label(frame, text="Название новой тренировки:", bg=BG_COLOR).pack(anchor="w")
         self.template_name = tk.Entry(frame, font=("Helvetica", 14), bg="white")
         self.template_name.pack(fill="x", pady=5, ipady=5)
         tk.Button(frame, text="Создать шаблон", command=self.create_template, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=5, ipady=5)
 
+        # Создание упражнения (справочник)
+        tk.Label(frame, text="Новое упражнение (справочник):", bg=BG_COLOR).pack(anchor="w", pady=(10,0))
+        self.ex_name = tk.Entry(frame, font=("Helvetica", 14), bg="white")
+        self.ex_name.pack(fill="x", pady=5, ipady=5)
+        tk.Button(frame, text="Добавить упражнение", command=self.create_exercise, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=5, ipady=5)
+
         # Список шаблонов
         tk.Label(frame, text="Мои шаблоны (выбери и назначь на день):", bg=BG_COLOR, font=("Helvetica", 12)).pack(anchor="w", pady=(15,0))
-        self.templates_listbox = tk.Listbox(frame, font=("Helvetica", 12), bg="white", bd=0, height=6)
+        self.templates_listbox = tk.Listbox(frame, font=("Helvetica", 12), bg="white", bd=0, height=5)
         self.templates_listbox.pack(fill="x", pady=5)
         
         # Назначение на день
-        tk.Label(frame, text="Выбери день недели для назначения:", bg=BG_COLOR).pack(anchor="w", pady=(10,0))
+        tk.Label(frame, text="Выбери день недели:", bg=BG_COLOR).pack(anchor="w", pady=(10,0))
         self.schedule_combo = ttk.Combobox(frame, values=["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"], state="readonly")
         self.schedule_combo.pack(fill="x", pady=2)
         tk.Button(frame, text="Назначить выбранный шаблон", command=self.assign_schedule, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=5, ipady=5)
@@ -292,9 +367,25 @@ class FitnessApp:
         tk.Label(frame, text="Текущее расписание:", bg=BG_COLOR, font=("Helvetica", 12)).pack(anchor="w", pady=(15,0))
         self.schedule_label = tk.Label(frame, text="", bg=BG_COLOR, justify="left")
         self.schedule_label.pack(anchor="w")
-        
+
+        # Список всех упражнений (справочник)
+        tk.Label(frame, text="Справочник упражнений:", bg=BG_COLOR, font=("Helvetica", 12)).pack(anchor="w", pady=(10,0))
+        self.exercises_listbox = tk.Listbox(frame, font=("Helvetica", 12), bg="white", bd=0, height=5)
+        self.exercises_listbox.pack(fill="x", pady=5)
+
+        self.refresh_exercises()
         self.refresh_templates()
         self.update_schedule_display()
+        self.refresh_templates()
+
+    def create_exercise(self):
+        try:
+            logic.add_exercise(self.ex_name.get())
+            self.ex_name.delete(0, tk.END)
+            self.refresh_exercises()
+            messagebox.showinfo("Успех", "Упражнение добавлено в справочник!")
+        except Exception as e:
+            messagebox.showerror("Ошибка", str(e))
 
     def create_template(self):
         try:

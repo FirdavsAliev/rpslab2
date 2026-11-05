@@ -172,3 +172,27 @@ def get_recommendations(user_id: int, db_path="fitness.db") -> list:
             recs.append("Вы недоедаете. Это может замедлить прогресс.")
     conn.close()
     return recs if recs else ["Всё отлично! Продолжайте в том же духе."]
+def get_all_exercises(db_path="fitness.db"):
+    """Возвращает список всех упражнений из справочника."""
+    conn = get_connection(db_path)
+    rows = conn.execute("SELECT * FROM exercises ORDER BY name").fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def add_exercise(name: str, muscle_group: str = "", db_path="fitness.db"):
+    """Добавляет новое упражнение в справочник."""
+    if not name.strip(): raise ValueError("Название обязательно")
+    conn = get_connection(db_path)
+    with conn:
+        conn.execute("INSERT INTO exercises(name, muscle_group) VALUES (?, ?)", (name.strip(), muscle_group))
+    conn.close()
+
+def log_workout_set(workout_id: int, exercise_id: int, sets: int, reps: int, weight: float, db_path="fitness.db"):
+    """Сохраняет подход (упражнение, вес, повторения) в журнал тренировки."""
+    conn = get_connection(db_path)
+    with conn:
+        conn.execute(
+            "INSERT INTO template_exercises(template_id, exercise_id, sets, reps, weight) VALUES (?, ?, ?, ?, ?)",
+            (workout_id, exercise_id, sets, reps, weight)
+        )
+    conn.close()
