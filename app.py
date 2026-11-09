@@ -140,39 +140,31 @@ class FitnessApp:
 
     # --- ГЛАВНАЯ (НОВЫЙ ДИЗАЙН) ---
     def build_home_tab(self):
-        # Очищаем старые виджеты
         for widget in self.tab_home.winfo_children():
             widget.destroy()
 
-        # Скроллинг
         canvas = tk.Canvas(self.tab_home, bg=BG_COLOR, highlightthickness=0)
         scrollbar = ttk.Scrollbar(self.tab_home, orient="vertical", command=canvas.yview)
         scroll_frame = tk.Frame(canvas, bg=BG_COLOR)
         
-        scroll_frame.bind(
-            "<Configure>",
-    lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
+        scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
         canvas.create_window((0, 0), window=scroll_frame, anchor="nw", width=420)
         canvas.configure(yscrollcommand=scrollbar.set)
         
         canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        # Данные
         profile = logic.get_user_profile(self.current_user_id)
         self.norm_cal = logic.calculate_norm(profile["weight"], profile["height"], profile["age"], profile["gender"], profile["activity_level"], profile["goal"])
         today = logic.get_day_nutrition(self.current_user_id)
         
-        # 1. КРУГОВОЙ ПРОГРЕСС
+        # КРУГ
         card_cal = tk.Frame(scroll_frame, bg=CARD_COLOR, bd=0)
         card_cal.pack(fill="x", pady=10, padx=15)
-        
         tk.Label(card_cal, text="Калории", font=("Helvetica", 14, "bold"), bg=CARD_COLOR).pack(anchor="w", padx=15, pady=(10, 0))
         
         canvas_cal = tk.Canvas(card_cal, width=200, height=200, bg=CARD_COLOR, highlightthickness=0)
         canvas_cal.pack(pady=10)
-        
         canvas_cal.create_oval(20, 20, 180, 180, outline=PROGRESS_BG, width=15)
         
         percent = min(today['cal'] / self.norm_cal, 1.0) if self.norm_cal > 0 else 0
@@ -186,9 +178,8 @@ class FitnessApp:
         left_cal = max(0, self.norm_cal - today['cal'])
         tk.Label(card_cal, text=f"Осталось: {left_cal:.0f} ккал", font=("Helvetica", 12), bg=CARD_COLOR, fg=GRAY_TEXT).pack(pady=(0, 10))
 
-        # 2. КАРТОЧКА БЖУ
+        # БЖУ
         n_prot, n_fat, n_carb = self.calculate_macros(self.norm_cal, profile["goal"])
-        
         card_macros = tk.Frame(scroll_frame, bg=CARD_COLOR, bd=0)
         card_macros.pack(fill="x", pady=10, padx=15)
         tk.Label(card_macros, text="БЖУ", font=("Helvetica", 14, "bold"), bg=CARD_COLOR).pack(anchor="w", padx=15, pady=(10, 5))
@@ -197,7 +188,7 @@ class FitnessApp:
         self.draw_progress_bar(card_macros, "Жиры", today['fat'], n_fat, "г")
         self.draw_progress_bar(card_macros, "Углеводы", today['carbs'], n_carb, "г")
 
-        # 3. ТРЕНИРОВКА
+        # ТРЕНИРОВКА
         import datetime
         schedule = logic.get_schedule(self.current_user_id)
         today_weekday = datetime.datetime.today().isoweekday()
@@ -216,79 +207,45 @@ class FitnessApp:
     def draw_progress_bar(self, parent, label, current, target, unit):
         frame = tk.Frame(parent, bg=CARD_COLOR)
         frame.pack(fill="x", padx=15, pady=5)
-        
         text = f"{label}: {current:.1f} / {target:.1f} {unit}"
         tk.Label(frame, text=text, bg=CARD_COLOR, font=("Helvetica", 11)).pack(anchor="w")
-        
         canvas = tk.Canvas(frame, height=8, bg=PROGRESS_BG, highlightthickness=0)
         canvas.pack(fill="x", pady=(2, 5))
-        
         percent = min(current / target, 1.0) if target > 0 else 0
         color = PROGRESS_OVER if current > target else PROGRESS_FILL
-        
         def draw_rect(event):
             canvas.delete("all")
-            width = event.width
-            canvas.create_rectangle(0, 0, width * percent, 8, fill=color, outline="")
-            
+            canvas.create_rectangle(0, 0, event.width * percent, 8, fill=color, outline="")
         canvas.bind("<Configure>", draw_rect)
 
     def calculate_macros(self, calories, goal):
-        if goal == "похудение":
-            p, f, c = 0.40, 0.20, 0.40
-        elif goal == "набор массы":
-            p, f, c = 0.25, 0.25, 0.50
-        else:
-            p, f, c = 0.30, 0.30, 0.40
-        
-        n_prot = (calories * p) / 4
-        n_fat = (calories * f) / 9
-        n_carb = (calories * c) / 4
-        return n_prot, n_fat, n_carb
+        if goal == "похудение": p, f, c = 0.40, 0.20, 0.40
+        elif goal == "набор массы": p, f, c = 0.25, 0.25, 0.50
+        else: p, f, c = 0.30, 0.30, 0.40
+        return (calories * p) / 4, (calories * f) / 9, (calories * c) / 4
 
     # --- ПИТАНИЕ ---
     def build_nutrition_tab(self):
         frame = tk.Frame(self.tab_nutrition, bg=BG_COLOR, padx=15, pady=15)
         frame.pack(fill="both", expand=True)
-        
         tk.Label(frame, text="Добавить еду", bg=BG_COLOR, font=("Helvetica", 14, "bold")).pack(anchor="w")
-        
         tk.Label(frame, text="Поиск продукта:", bg=BG_COLOR).pack(anchor="w")
         self.food_combo = ttk.Combobox(frame, font=("Helvetica", 12))
         self.food_combo.pack(fill="x", pady=5)
         self.food_combo.bind('<KeyRelease>', self.update_food_suggestions)
-
         tk.Label(frame, text="Вес (грамм):", bg=BG_COLOR).pack(anchor="w")
         self.weight_entry = tk.Entry(frame, font=("Helvetica", 14), bg="white")
         self.weight_entry.pack(fill="x", pady=5, ipady=5)
-        
         tk.Button(frame, text="Добавить в дневник", command=self.add_meal, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=5, ipady=8)
 
         tk.Label(frame, text="Не нашли продукт? Добавьте свой (на 100 г):", bg=BG_COLOR, font=("Helvetica", 10, "italic")).pack(anchor="w", pady=(15,0))
-        
         f_frame = tk.Frame(frame, bg=BG_COLOR)
         f_frame.pack(fill="x", pady=5)
-        
-        self.new_food_name = tk.Entry(f_frame, width=15, font=("Helvetica", 10))
-        self.new_food_name.insert(0, "Название")
-        self.new_food_name.pack(side="left", padx=2)
-        
-        self.new_food_cal = tk.Entry(f_frame, width=5, font=("Helvetica", 10))
-        self.new_food_cal.insert(0, "Ккал")
-        self.new_food_cal.pack(side="left", padx=2)
-
-        self.new_food_prot = tk.Entry(f_frame, width=5, font=("Helvetica", 10))
-        self.new_food_prot.insert(0, "Б")
-        self.new_food_prot.pack(side="left", padx=2)
-
-        self.new_food_fat = tk.Entry(f_frame, width=5, font=("Helvetica", 10))
-        self.new_food_fat.insert(0, "Ж")
-        self.new_food_fat.pack(side="left", padx=2)
-
-        self.new_food_carb = tk.Entry(f_frame, width=5, font=("Helvetica", 10))
-        self.new_food_carb.insert(0, "У")
-        self.new_food_carb.pack(side="left", padx=2)
-
+        self.new_food_name = tk.Entry(f_frame, width=15, font=("Helvetica", 10)); self.new_food_name.insert(0, "Название"); self.new_food_name.pack(side="left", padx=2)
+        self.new_food_cal = tk.Entry(f_frame, width=5, font=("Helvetica", 10)); self.new_food_cal.insert(0, "Ккал"); self.new_food_cal.pack(side="left", padx=2)
+        self.new_food_prot = tk.Entry(f_frame, width=5, font=("Helvetica", 10)); self.new_food_prot.insert(0, "Б"); self.new_food_prot.pack(side="left", padx=2)
+        self.new_food_fat = tk.Entry(f_frame, width=5, font=("Helvetica", 10)); self.new_food_fat.insert(0, "Ж"); self.new_food_fat.pack(side="left", padx=2)
+        self.new_food_carb = tk.Entry(f_frame, width=5, font=("Helvetica", 10)); self.new_food_carb.insert(0, "У"); self.new_food_carb.pack(side="left", padx=2)
         tk.Button(frame, text="Сохранить свой продукт", command=self.add_custom_food, bg="gray", fg="white", bd=0).pack(fill="x", pady=5)
 
         self.nutrition_summary = tk.Label(frame, text="", bg=CARD_COLOR, font=("Helvetica", 12), justify="left", padx=10, pady=10)
@@ -329,26 +286,18 @@ class FitnessApp:
             if not name or name == "Название":
                 messagebox.showwarning("Внимание", "Введите название продукта")
                 return
-            
             cal = float(self.new_food_cal.get() or 0)
             prot = float(self.new_food_prot.get() or 0)
             fat = float(self.new_food_fat.get() or 0)
             carb = float(self.new_food_carb.get() or 0)
-            
             logic.add_food(name, cal, prot, fat, carb)
             self.update_food_suggestions(None)
             messagebox.showinfo("Успех", f"Продукт '{name}' добавлен в базу!")
-            
-            self.new_food_name.delete(0, tk.END)
-            self.new_food_name.insert(0, "Название")
-            self.new_food_cal.delete(0, tk.END)
-            self.new_food_cal.insert(0, "Ккал")
-            self.new_food_prot.delete(0, tk.END)
-            self.new_food_prot.insert(0, "Б")
-            self.new_food_fat.delete(0, tk.END)
-            self.new_food_fat.insert(0, "Ж")
-            self.new_food_carb.delete(0, tk.END)
-            self.new_food_carb.insert(0, "У")
+            self.new_food_name.delete(0, tk.END); self.new_food_name.insert(0, "Название")
+            self.new_food_cal.delete(0, tk.END); self.new_food_cal.insert(0, "Ккал")
+            self.new_food_prot.delete(0, tk.END); self.new_food_prot.insert(0, "Б")
+            self.new_food_fat.delete(0, tk.END); self.new_food_fat.insert(0, "Ж")
+            self.new_food_carb.delete(0, tk.END); self.new_food_carb.insert(0, "У")
         except Exception as e:
             messagebox.showerror("Ошибка", f"Проверьте данные: {str(e)}")
 
@@ -365,6 +314,9 @@ class FitnessApp:
         frame = tk.Frame(self.tab_workouts, bg=BG_COLOR, padx=15, pady=15)
         frame.pack(fill="both", expand=True)
 
+        # Кнопка начала тренировки
+        tk.Button(frame, text="▶ Начать тренировку по шаблону", command=self.start_workout, bg="green", fg="white", font=("Helvetica", 14, "bold"), bd=0).pack(fill="x", pady=10, ipady=10)
+
         # 1. Создание упражнения
         tk.Label(frame, text="1. Добавить новое упражнение:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w")
         self.ex_name = tk.Entry(frame, font=("Helvetica", 14), bg="white")
@@ -379,38 +331,25 @@ class FitnessApp:
 
         # 3. Добавление упражнения в шаблон
         tk.Label(frame, text="3. Добавить упражнение в шаблон:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10,0))
-        
-        # Выбор шаблона
         tk.Label(frame, text="Выберите шаблон:", bg=BG_COLOR).pack(anchor="w")
         self.sel_template_combo = ttk.Combobox(frame, font=("Helvetica", 12), state="readonly")
         self.sel_template_combo.pack(fill="x", pady=2)
 
-        # Выбор упражнения
         tk.Label(frame, text="Выберите упражнение:", bg=BG_COLOR).pack(anchor="w")
         self.sel_ex_combo = ttk.Combobox(frame, font=("Helvetica", 12), state="readonly")
         self.sel_ex_combo.pack(fill="x", pady=2)
 
-        # Параметры
         p_frame = tk.Frame(frame, bg=BG_COLOR)
         p_frame.pack(fill="x", pady=5)
-        
         tk.Label(p_frame, text="Подходы:", bg=BG_COLOR).pack(side="left")
-        self.sets_entry = tk.Entry(p_frame, width=5, font=("Helvetica", 12))
-        self.sets_entry.insert(0, "3")
-        self.sets_entry.pack(side="left", padx=5)
-        
+        self.sets_entry = tk.Entry(p_frame, width=5, font=("Helvetica", 12)); self.sets_entry.insert(0, "3"); self.sets_entry.pack(side="left", padx=5)
         tk.Label(p_frame, text="Повторы:", bg=BG_COLOR).pack(side="left")
-        self.reps_entry = tk.Entry(p_frame, width=5, font=("Helvetica", 12))
-        self.reps_entry.insert(0, "10")
-        self.reps_entry.pack(side="left", padx=5)
-        
+        self.reps_entry = tk.Entry(p_frame, width=5, font=("Helvetica", 12)); self.reps_entry.insert(0, "10"); self.reps_entry.pack(side="left", padx=5)
         tk.Label(p_frame, text="Вес(кг):", bg=BG_COLOR).pack(side="left")
-        self.weight_entry_ex = tk.Entry(p_frame, width=5, font=("Helvetica", 12))
-        self.weight_entry_ex.pack(side="left", padx=5)
-
+        self.weight_entry_ex = tk.Entry(p_frame, width=5, font=("Helvetica", 12)); self.weight_entry_ex.pack(side="left", padx=5)
         tk.Button(frame, text="Добавить в выбранный шаблон", command=self.add_ex_to_template, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=10, ipady=8)
 
-        # 4. Расписание (внизу)
+        # 4. Расписание
         tk.Label(frame, text="4. Расписание:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10,0))
         self.schedule_combo = ttk.Combobox(frame, values=["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"], state="readonly")
         self.schedule_combo.pack(fill="x", pady=2)
@@ -422,21 +361,17 @@ class FitnessApp:
         self.refresh_all_combos()
 
     def refresh_all_combos(self):
-        # Обновляем списки в выпадающих меню
         templates = logic.get_user_templates(self.current_user_id)
         self.sel_template_combo['values'] = [t["name"] for t in templates]
-        
         exercises = logic.get_all_exercises()
         self.sel_ex_combo['values'] = [e["name"] for e in exercises]
-        
-        # Обновляем расписание
         self.update_schedule_display()
 
     def create_exercise(self):
         try:
             logic.add_exercise(self.ex_name.get())
             self.ex_name.delete(0, tk.END)
-            self.refresh_all_combos() # Обновляем выпадающий список упражнений
+            self.refresh_all_combos()
             messagebox.showinfo("Успех", "Упражнение добавлено!")
         except Exception as e:
             messagebox.showerror("Ошибка", str(e))
@@ -445,7 +380,7 @@ class FitnessApp:
         try:
             logic.create_template(self.current_user_id, self.template_name.get())
             self.template_name.delete(0, tk.END)
-            self.refresh_all_combos() # Обновляем выпадающий список шаблонов
+            self.refresh_all_combos()
             messagebox.showinfo("Успех", "Шаблон создан!")
         except Exception as e:
             messagebox.showerror("Ошибка", str(e))
@@ -453,39 +388,90 @@ class FitnessApp:
     def add_ex_to_template(self):
         template_name = self.sel_template_combo.get()
         ex_name = self.sel_ex_combo.get()
-        
         if not template_name or not ex_name:
             messagebox.showwarning("Внимание", "Выберите шаблон и упражнение из выпадающих списков!")
             return
-            
         try:
             sets = int(self.sets_entry.get() or 3)
             reps = int(self.reps_entry.get() or 10)
             weight = float(self.weight_entry_ex.get() or 0)
-            
             templates = logic.get_user_templates(self.current_user_id)
             template_id = next(t["id"] for t in templates if t["name"] == template_name)
-            
             exercises = logic.get_all_exercises()
             ex_id = next(e["id"] for e in exercises if e["name"] == ex_name)
-            
             logic.add_exercise_to_template(template_id, ex_id, sets, reps, weight)
             messagebox.showinfo("Успех", f"'{ex_name}' добавлено в '{template_name}'!")
         except Exception as e:
             messagebox.showerror("Ошибка", str(e))
+
+    def start_workout(self):
+        template_name = self.sel_template_combo.get()
+        if not template_name:
+            messagebox.showwarning("Внимание", "Сначала выберите шаблон из выпадающего списка!")
+            return
+        templates = logic.get_user_templates(self.current_user_id)
+        template_id = next(t["id"] for t in templates if t["name"] == template_name)
+        exercises = logic.get_template_exercises(template_id)
+        if not exercises:
+            messagebox.showinfo("Инфо", "В этом шаблоне пока нет упражнений. Добавьте их сначала.")
+            return
+        self.show_workout_log(template_name, exercises)
+
+    def show_workout_log(self, template_name, exercises):
+        log_win = tk.Toplevel(self.root)
+        log_win.title(f"Тренировка: {template_name}")
+        log_win.geometry("450x600")
+        log_win.configure(bg=BG_COLOR)
+
+        tk.Label(log_win, text=f"Тренировка: {template_name}", font=("Helvetica", 16, "bold"), bg=BG_COLOR).pack(pady=15)
+
+        canvas = tk.Canvas(log_win, bg=BG_COLOR, highlightthickness=0)
+        scrollbar = ttk.Scrollbar(log_win, orient="vertical", command=canvas.yview)
+        scroll_frame = tk.Frame(canvas, bg=BG_COLOR)
+        scroll_frame.bind("<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=scroll_frame, anchor="nw", width=420)
+        canvas.configure(yscrollcommand=scrollbar.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+        for ex in exercises:
+            frame = tk.Frame(scroll_frame, bg=CARD_COLOR, pady=10, padx=10)
+            frame.pack(fill="x", pady=5, padx=10)
+            tk.Label(frame, text=ex["name"], font=("Helvetica", 12, "bold"), bg=CARD_COLOR).pack(anchor="w")
+            
+            p_frame = tk.Frame(frame, bg=CARD_COLOR)
+            p_frame.pack(fill="x", pady=5)
+            tk.Label(p_frame, text="Подходы:", bg=CARD_COLOR).pack(side="left")
+            sets_entry = tk.Entry(p_frame, width=4); sets_entry.insert(0, str(ex["sets"] or 3)); sets_entry.pack(side="left", padx=2)
+            tk.Label(p_frame, text="Повторы:", bg=CARD_COLOR).pack(side="left")
+            reps_entry = tk.Entry(p_frame, width=4); reps_entry.insert(0, str(ex["reps"] or 10)); reps_entry.pack(side="left", padx=2)
+            tk.Label(p_frame, text="Вес(кг):", bg=CARD_COLOR).pack(side="left")
+            weight_entry = tk.Entry(p_frame, width=5); weight_entry.insert(0, str(ex["weight"] or 0)); weight_entry.pack(side="left", padx=2)
+
+            ex_name_current = ex["name"]
+            def save_result(name=ex_name_current, s=sets_entry, r=reps_entry, w=weight_entry):
+                try:
+                    sets = int(s.get()); reps = int(r.get()); weight = float(w.get())
+                    ex_id = logic.get_exercise_id_by_name(name)
+                    logic.save_workout_set(self.current_user_id, ex_id, sets, reps, weight)
+                    messagebox.showinfo("Успех", f"Результат для '{name}' сохранен!")
+                except Exception as e:
+                    messagebox.showerror("Ошибка", str(e))
+
+            tk.Button(frame, text="Сохранить результат", command=save_result, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=5)
+
+        tk.Button(log_win, text="Закрыть", command=log_win.destroy, bg="gray", fg="white", bd=0).pack(pady=20, ipady=5)
 
     def assign_schedule(self):
         template_name = self.sel_template_combo.get()
         if not template_name:
             messagebox.showwarning("Внимание", "Выберите шаблон из выпадающего списка!")
             return
-
         day_map = {"Понедельник": 1, "Вторник": 2, "Среда": 3, "Четверг": 4, "Пятница": 5, "Суббота": 6, "Воскресенье": 7}
         day = day_map.get(self.schedule_combo.get())
         if not day:
             messagebox.showwarning("Внимание", "Выберите день недели!")
             return
-            
         templates = logic.get_user_templates(self.current_user_id)
         template_id = next(t["id"] for t in templates if t["name"] == template_name)
         logic.set_schedule_day(self.current_user_id, day, template_id)
@@ -493,6 +479,8 @@ class FitnessApp:
         self.update_schedule_display()
 
     def update_schedule_display(self):
+        if not hasattr(self, 'schedule_label') or not self.schedule_label.winfo_exists():
+            return 
         schedule = logic.get_schedule(self.current_user_id)
         day_names = {1: "Пн", 2: "Вт", 3: "Ср", 4: "Чт", 5: "Пт", 6: "Сб", 7: "Вс"}
         text = ""
@@ -503,11 +491,6 @@ class FitnessApp:
             else:
                 text += f"{day_str}: —\n"
         self.schedule_label.config(text=text)
-
-    def refresh_templates(self):
-        self.templates_listbox.delete(0, tk.END)
-        for t in logic.get_user_templates(self.current_user_id):
-            self.templates_listbox.insert(tk.END, t["name"])
 
     # --- ПРОФИЛЬ ---
     def build_profile_tab(self):

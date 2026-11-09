@@ -216,3 +216,21 @@ def save_workout_set(user_id, exercise_id, sets, reps, weight, db_path="fitness.
             (user_id, exercise_id, date.today().isoformat(), sets, reps, weight)
         )
     conn.close()
+def get_template_exercises(template_id, db_path="fitness.db"):
+    """Возвращает список упражнений, привязанных к шаблону."""
+    conn = get_connection(db_path)
+    rows = conn.execute("""
+        SELECT e.name, te.sets, te.reps, te.weight 
+        FROM template_exercises te
+        JOIN exercises e ON e.id = te.exercise_id
+        WHERE te.template_id = ?
+    """, (template_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_exercise_id_by_name(name, db_path="fitness.db"):
+    """Находит ID упражнения по его названию."""
+    conn = get_connection(db_path)
+    row = conn.execute("SELECT id FROM exercises WHERE LOWER(name) = LOWER(?)", (name.strip(),)).fetchone()
+    conn.close()
+    return row["id"] if row else None
