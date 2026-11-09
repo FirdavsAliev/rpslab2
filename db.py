@@ -59,6 +59,18 @@ def init_db(path=DB_PATH):
             FOREIGN KEY (user_id) REFERENCES users(id),
             FOREIGN KEY (template_id) REFERENCES workout_templates(id)
         );
+        
+        CREATE TABLE IF NOT EXISTS workout_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            exercise_id INTEGER NOT NULL,
+            date DATE NOT NULL,
+            sets INTEGER,
+            reps INTEGER,
+            weight REAL,
+            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (exercise_id) REFERENCES exercises(id)
+        );
 
         CREATE TABLE IF NOT EXISTS foods (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

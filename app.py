@@ -364,80 +364,135 @@ class FitnessApp:
     def build_workouts_tab(self):
         frame = tk.Frame(self.tab_workouts, bg=BG_COLOR, padx=15, pady=15)
         frame.pack(fill="both", expand=True)
-        
-        tk.Label(frame, text="Название новой тренировки:", bg=BG_COLOR).pack(anchor="w")
+
+        # 1. Создание упражнения
+        tk.Label(frame, text="1. Добавить новое упражнение:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w")
+        self.ex_name = tk.Entry(frame, font=("Helvetica", 14), bg="white")
+        self.ex_name.pack(fill="x", pady=5, ipady=5)
+        tk.Button(frame, text="Добавить в справочник", command=self.create_exercise, bg="gray", fg="white", bd=0).pack(fill="x", pady=5, ipady=5)
+
+        # 2. Создание шаблона
+        tk.Label(frame, text="2. Создать шаблон тренировки:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10,0))
         self.template_name = tk.Entry(frame, font=("Helvetica", 14), bg="white")
         self.template_name.pack(fill="x", pady=5, ipady=5)
         tk.Button(frame, text="Создать шаблон", command=self.create_template, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=5, ipady=5)
 
-        tk.Label(frame, text="Новое упражнение (справочник):", bg=BG_COLOR).pack(anchor="w", pady=(10,0))
-        self.ex_name = tk.Entry(frame, font=("Helvetica", 14), bg="white")
-        self.ex_name.pack(fill="x", pady=5, ipady=5)
-        tk.Button(frame, text="Добавить упражнение", command=self.create_exercise, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=5, ipady=5)
-
-        tk.Label(frame, text="Справочник упражнений:", bg=BG_COLOR, font=("Helvetica", 12)).pack(anchor="w", pady=(10,0))
-        self.exercises_listbox = tk.Listbox(frame, font=("Helvetica", 12), bg="white", bd=0, height=5)
-        self.exercises_listbox.pack(fill="x", pady=5)
-
-        tk.Label(frame, text="Мои шаблоны (выбери и назначь на день):", bg=BG_COLOR, font=("Helvetica", 12)).pack(anchor="w", pady=(15,0))
-        self.templates_listbox = tk.Listbox(frame, font=("Helvetica", 12), bg="white", bd=0, height=5)
-        self.templates_listbox.pack(fill="x", pady=5)
+        # 3. Добавление упражнения в шаблон
+        tk.Label(frame, text="3. Добавить упражнение в шаблон:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10,0))
         
-        tk.Label(frame, text="Выбери день недели:", bg=BG_COLOR).pack(anchor="w", pady=(10,0))
+        # Выбор шаблона
+        tk.Label(frame, text="Выберите шаблон:", bg=BG_COLOR).pack(anchor="w")
+        self.sel_template_combo = ttk.Combobox(frame, font=("Helvetica", 12), state="readonly")
+        self.sel_template_combo.pack(fill="x", pady=2)
+
+        # Выбор упражнения
+        tk.Label(frame, text="Выберите упражнение:", bg=BG_COLOR).pack(anchor="w")
+        self.sel_ex_combo = ttk.Combobox(frame, font=("Helvetica", 12), state="readonly")
+        self.sel_ex_combo.pack(fill="x", pady=2)
+
+        # Параметры
+        p_frame = tk.Frame(frame, bg=BG_COLOR)
+        p_frame.pack(fill="x", pady=5)
+        
+        tk.Label(p_frame, text="Подходы:", bg=BG_COLOR).pack(side="left")
+        self.sets_entry = tk.Entry(p_frame, width=5, font=("Helvetica", 12))
+        self.sets_entry.insert(0, "3")
+        self.sets_entry.pack(side="left", padx=5)
+        
+        tk.Label(p_frame, text="Повторы:", bg=BG_COLOR).pack(side="left")
+        self.reps_entry = tk.Entry(p_frame, width=5, font=("Helvetica", 12))
+        self.reps_entry.insert(0, "10")
+        self.reps_entry.pack(side="left", padx=5)
+        
+        tk.Label(p_frame, text="Вес(кг):", bg=BG_COLOR).pack(side="left")
+        self.weight_entry_ex = tk.Entry(p_frame, width=5, font=("Helvetica", 12))
+        self.weight_entry_ex.pack(side="left", padx=5)
+
+        tk.Button(frame, text="Добавить в выбранный шаблон", command=self.add_ex_to_template, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=10, ipady=8)
+
+        # 4. Расписание (внизу)
+        tk.Label(frame, text="4. Расписание:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10,0))
         self.schedule_combo = ttk.Combobox(frame, values=["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"], state="readonly")
         self.schedule_combo.pack(fill="x", pady=2)
-        tk.Button(frame, text="Назначить выбранный шаблон", command=self.assign_schedule, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=5, ipady=5)
+        tk.Button(frame, text="Назначить выбранный шаблон на день", command=self.assign_schedule, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=5, ipady=5)
 
-        tk.Label(frame, text="Текущее расписание:", bg=BG_COLOR, font=("Helvetica", 12)).pack(anchor="w", pady=(15,0))
         self.schedule_label = tk.Label(frame, text="", bg=BG_COLOR, justify="left")
-        self.schedule_label.pack(anchor="w")
+        self.schedule_label.pack(anchor="w", pady=(10,0))
 
-        self.refresh_exercises()
-        self.refresh_templates()
+        self.refresh_all_combos()
+
+    def refresh_all_combos(self):
+        # Обновляем списки в выпадающих меню
+        templates = logic.get_user_templates(self.current_user_id)
+        self.sel_template_combo['values'] = [t["name"] for t in templates]
+        
+        exercises = logic.get_all_exercises()
+        self.sel_ex_combo['values'] = [e["name"] for e in exercises]
+        
+        # Обновляем расписание
         self.update_schedule_display()
-
-    def create_template(self):
-        try:
-            logic.create_template(self.current_user_id, self.template_name.get())
-            self.refresh_templates()
-            self.template_name.delete(0, tk.END)
-        except Exception as e:
-            messagebox.showerror("Ошибка", str(e))
 
     def create_exercise(self):
         try:
             logic.add_exercise(self.ex_name.get())
             self.ex_name.delete(0, tk.END)
-            self.refresh_exercises()
-            messagebox.showinfo("Успех", "Упражнение добавлено в справочник!")
+            self.refresh_all_combos() # Обновляем выпадающий список упражнений
+            messagebox.showinfo("Успех", "Упражнение добавлено!")
         except Exception as e:
             messagebox.showerror("Ошибка", str(e))
 
-    def refresh_exercises(self):
-        self.exercises_listbox.delete(0, tk.END)
-        for ex in logic.get_all_exercises():
-            self.exercises_listbox.insert(tk.END, ex["name"])
+    def create_template(self):
+        try:
+            logic.create_template(self.current_user_id, self.template_name.get())
+            self.template_name.delete(0, tk.END)
+            self.refresh_all_combos() # Обновляем выпадающий список шаблонов
+            messagebox.showinfo("Успех", "Шаблон создан!")
+        except Exception as e:
+            messagebox.showerror("Ошибка", str(e))
+
+    def add_ex_to_template(self):
+        template_name = self.sel_template_combo.get()
+        ex_name = self.sel_ex_combo.get()
+        
+        if not template_name or not ex_name:
+            messagebox.showwarning("Внимание", "Выберите шаблон и упражнение из выпадающих списков!")
+            return
+            
+        try:
+            sets = int(self.sets_entry.get() or 3)
+            reps = int(self.reps_entry.get() or 10)
+            weight = float(self.weight_entry_ex.get() or 0)
+            
+            templates = logic.get_user_templates(self.current_user_id)
+            template_id = next(t["id"] for t in templates if t["name"] == template_name)
+            
+            exercises = logic.get_all_exercises()
+            ex_id = next(e["id"] for e in exercises if e["name"] == ex_name)
+            
+            logic.add_exercise_to_template(template_id, ex_id, sets, reps, weight)
+            messagebox.showinfo("Успех", f"'{ex_name}' добавлено в '{template_name}'!")
+        except Exception as e:
+            messagebox.showerror("Ошибка", str(e))
 
     def assign_schedule(self):
-        sel = self.templates_listbox.curselection()
-        if not sel:
-            messagebox.showwarning("Внимание", "Выберите шаблон")
+        template_name = self.sel_template_combo.get()
+        if not template_name:
+            messagebox.showwarning("Внимание", "Выберите шаблон из выпадающего списка!")
             return
+
         day_map = {"Понедельник": 1, "Вторник": 2, "Среда": 3, "Четверг": 4, "Пятница": 5, "Суббота": 6, "Воскресенье": 7}
         day = day_map.get(self.schedule_combo.get())
         if not day:
-            messagebox.showwarning("Внимание", "Выберите день")
+            messagebox.showwarning("Внимание", "Выберите день недели!")
             return
-        template_name = self.templates_listbox.get(sel[0])
+            
         templates = logic.get_user_templates(self.current_user_id)
         template_id = next(t["id"] for t in templates if t["name"] == template_name)
         logic.set_schedule_day(self.current_user_id, day, template_id)
-        messagebox.showinfo("Успех", f"Назначено на {self.schedule_combo.get()}")
+        messagebox.showinfo("Успех", f"'{template_name}' назначено на {self.schedule_combo.get()}")
         self.update_schedule_display()
 
     def update_schedule_display(self):
-        if not hasattr(self, 'schedule_label') or not self.schedule_label.winfo_exists():
-            return 
         schedule = logic.get_schedule(self.current_user_id)
         day_names = {1: "Пн", 2: "Вт", 3: "Ср", 4: "Чт", 5: "Пт", 6: "Сб", 7: "Вс"}
         text = ""

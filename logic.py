@@ -196,3 +196,23 @@ def log_workout_set(workout_id: int, exercise_id: int, sets: int, reps: int, wei
             (workout_id, exercise_id, sets, reps, weight)
         )
     conn.close()
+
+def add_exercise_to_template(template_id, exercise_id, sets, reps, weight, db_path="fitness.db"):
+    """Добавляет упражнение в шаблон тренировки."""
+    conn = get_connection(db_path)
+    with conn:
+        conn.execute(
+            "INSERT INTO template_exercises(template_id, exercise_id, sets, reps, weight) VALUES (?, ?, ?, ?, ?)",
+            (template_id, exercise_id, sets, reps, weight)
+        )
+    conn.close()
+
+def save_workout_set(user_id, exercise_id, sets, reps, weight, db_path="fitness.db"):
+    """Сохраняет выполненный подход в историю (для аналитики)."""
+    conn = get_connection(db_path)
+    with conn:
+        conn.execute(
+            "INSERT INTO workout_history(user_id, exercise_id, date, sets, reps, weight) VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, exercise_id, date.today().isoformat(), sets, reps, weight)
+        )
+    conn.close()
