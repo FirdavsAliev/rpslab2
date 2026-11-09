@@ -234,3 +234,39 @@ def get_exercise_id_by_name(name, db_path="fitness.db"):
     row = conn.execute("SELECT id FROM exercises WHERE LOWER(name) = LOWER(?)", (name.strip(),)).fetchone()
     conn.close()
     return row["id"] if row else None
+
+def get_exercise_progress(user_id, exercise_id, db_path="fitness.db"):
+    """Возвращает историю весов по упражнению (для графика)."""
+    conn = get_connection(db_path)
+    rows = conn.execute("""
+        SELECT date, weight 
+        FROM workout_history 
+        WHERE user_id = ? AND exercise_id = ?
+        ORDER BY date
+    """, (user_id, exercise_id)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_personal_records(user_id, db_path="fitness.db"):
+    """Возвращает лучший вес для каждого упражнения."""
+    conn = get_connection(db_path)
+    rows = conn.execute("""
+        SELECT e.name, MAX(wh.weight) as max_weight
+        FROM workout_history wh
+        JOIN exercises e ON e.id = wh.exercise_id
+        WHERE wh.user_id = ?
+        GROUP BY e.name
+        ORDER BY max_weight DESC
+    """, (user_id,)).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+def get_plan_compliance(user_id, db_path="fitness.db"):
+    """Считает, сколько тренировок было запланировано и сколько выполнено (упрощенно)."""
+    conn = get_connection(db_path)
+    # В нашем случае "выполнено" - это сколько дней есть записи в workout_history
+    history_days = conn.execute("SELECT COUNT(DISTINCT date) AS c FROM workout_history WHERE user_id=?", (user_id,)).fetchone()["c"]
+    # Запланировано - это количество дней в расписании
+    schedule_days = conn.execute("SELECT COUNT(*) AS c FROM schedule WHERE user_id=?", (user_id,)).fetchone()["c"]
+    conn.close()
+    return history_days, schedule_days

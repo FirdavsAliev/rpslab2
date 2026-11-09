@@ -126,19 +126,22 @@ class FitnessApp:
         self.tab_home = tk.Frame(self.notebook, bg=BG_COLOR)
         self.tab_nutrition = tk.Frame(self.notebook, bg=BG_COLOR)
         self.tab_workouts = tk.Frame(self.notebook, bg=BG_COLOR)
+        self.tab_analytics = tk.Frame(self.notebook, bg=BG_COLOR)
         self.tab_profile = tk.Frame(self.notebook, bg=BG_COLOR)
 
         self.notebook.add(self.tab_home, text="🏠 Главная")
         self.notebook.add(self.tab_nutrition, text="🍎 Питание")
         self.notebook.add(self.tab_workouts, text="🏋️ Тренировки")
+        self.notebook.add(self.tab_analytics, text="📊 Аналитика")
         self.notebook.add(self.tab_profile, text="👤 Профиль")
 
         self.build_home_tab()
         self.build_nutrition_tab()
         self.build_workouts_tab()
+        self.build_analytics_tab()
         self.build_profile_tab()
 
-    # --- ГЛАВНАЯ (НОВЫЙ ДИЗАЙН) ---
+    # --- ГЛАВНАЯ ---
     def build_home_tab(self):
         for widget in self.tab_home.winfo_children():
             widget.destroy()
@@ -314,22 +317,18 @@ class FitnessApp:
         frame = tk.Frame(self.tab_workouts, bg=BG_COLOR, padx=15, pady=15)
         frame.pack(fill="both", expand=True)
 
-        # Кнопка начала тренировки
         tk.Button(frame, text="▶ Начать тренировку по шаблону", command=self.start_workout, bg="green", fg="white", font=("Helvetica", 14, "bold"), bd=0).pack(fill="x", pady=10, ipady=10)
 
-        # 1. Создание упражнения
         tk.Label(frame, text="1. Добавить новое упражнение:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w")
         self.ex_name = tk.Entry(frame, font=("Helvetica", 14), bg="white")
         self.ex_name.pack(fill="x", pady=5, ipady=5)
         tk.Button(frame, text="Добавить в справочник", command=self.create_exercise, bg="gray", fg="white", bd=0).pack(fill="x", pady=5, ipady=5)
 
-        # 2. Создание шаблона
         tk.Label(frame, text="2. Создать шаблон тренировки:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10,0))
         self.template_name = tk.Entry(frame, font=("Helvetica", 14), bg="white")
         self.template_name.pack(fill="x", pady=5, ipady=5)
         tk.Button(frame, text="Создать шаблон", command=self.create_template, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=5, ipady=5)
 
-        # 3. Добавление упражнения в шаблон
         tk.Label(frame, text="3. Добавить упражнение в шаблон:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10,0))
         tk.Label(frame, text="Выберите шаблон:", bg=BG_COLOR).pack(anchor="w")
         self.sel_template_combo = ttk.Combobox(frame, font=("Helvetica", 12), state="readonly")
@@ -349,7 +348,6 @@ class FitnessApp:
         self.weight_entry_ex = tk.Entry(p_frame, width=5, font=("Helvetica", 12)); self.weight_entry_ex.pack(side="left", padx=5)
         tk.Button(frame, text="Добавить в выбранный шаблон", command=self.add_ex_to_template, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=10, ipady=8)
 
-        # 4. Расписание
         tk.Label(frame, text="4. Расписание:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10,0))
         self.schedule_combo = ttk.Combobox(frame, values=["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"], state="readonly")
         self.schedule_combo.pack(fill="x", pady=2)
@@ -491,6 +489,82 @@ class FitnessApp:
             else:
                 text += f"{day_str}: —\n"
         self.schedule_label.config(text=text)
+
+    # --- АНАЛИТИКА ---
+    def build_analytics_tab(self):
+        for widget in self.tab_analytics.winfo_children():
+            widget.destroy()
+
+        frame = tk.Frame(self.tab_analytics, bg=BG_COLOR, padx=15, pady=15)
+        frame.pack(fill="both", expand=True)
+
+        tk.Label(frame, text="Выберите упражнение для графика:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w")
+        self.analytics_combo = ttk.Combobox(frame, font=("Helvetica", 12), state="readonly")
+        self.analytics_combo.pack(fill="x", pady=5)
+        
+        exercises = logic.get_all_exercises()
+        print("СПИСОК УПРАЖНЕНИЙ:", [e["name"] for e in exercises])
+        self.analytics_combo['values'] = [e["name"] for e in exercises]
+        self.analytics_combo.bind("<<ComboboxSelected>>", self.draw_progress_chart)
+
+        self.chart_canvas = tk.Canvas(frame, height=200, bg=CARD_COLOR, highlightthickness=0)
+        self.chart_canvas.pack(fill="x", pady=10)
+
+        tk.Label(frame, text="🏆 Личные рекорды:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10, 0))
+        self.records_text = tk.Text(frame, height=6, bg=CARD_COLOR, bd=0, font=("Helvetica", 11))
+        self.records_text.pack(fill="x", pady=5)
+        self.update_records()
+
+        tk.Label(frame, text="📅 Статистика тренировок:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10, 0))
+        done, planned = logic.get_plan_compliance(self.current_user_id)
+        stats_text = f"Выполнено дней: {done}\nЗапланировано в расписании: {planned}\nПроцент: {done/planned*100 if planned > 0 else 0:.0f}%"
+        tk.Label(frame, text=stats_text, bg=CARD_COLOR, justify="left", padx=10, pady=10).pack(fill="x", pady=5)
+
+    def draw_progress_chart(self, event=None):
+        ex_name = self.analytics_combo.get()
+        if not ex_name: return
+
+        exercises = logic.get_all_exercises()
+        ex_id = next(e["id"] for e in exercises if e["name"] == ex_name)
+        
+        data = logic.get_exercise_progress(self.current_user_id, ex_id)
+        
+        self.chart_canvas.delete("all")
+        
+        if not data:
+            self.chart_canvas.create_text(200, 100, text="Нет данных для графика.\nСначала запишите тренировку.", fill=GRAY_TEXT)
+            return
+
+        w, h = 400, 200
+        pad_x, pad_y = 40, 20
+        max_w = max([d["weight"] for d in data]) or 10
+        
+        self.chart_canvas.create_line(pad_x, h-pad_y, w-pad_x, h-pad_y, fill=GRAY_TEXT)
+        self.chart_canvas.create_line(pad_x, pad_y, pad_x, h-pad_y, fill=GRAY_TEXT)
+
+        points = []
+        for i, d in enumerate(data):
+            x = pad_x + (i / max(len(data)-1, 1)) * (w - 2*pad_x)
+            y = h - pad_y - (d["weight"] / max_w) * (h - 2*pad_y)
+            points.append((x, y))
+            self.chart_canvas.create_oval(x-3, y-3, x+3, y+3, fill=ACCENT_COLOR)
+            self.chart_canvas.create_text(x, y-10, text=f"{d['weight']:.0f}", fill=TEXT_COLOR, font=("Helvetica", 8))
+
+        for i in range(len(points)-1):
+            self.chart_canvas.create_line(points[i][0], points[i][1], points[i+1][0], points[i+1][1], fill=ACCENT_COLOR, width=2)
+
+    def update_records(self):
+        records = logic.get_personal_records(self.current_user_id)
+        text = ""
+        for r in records:
+            text += f"{r['name']}: {r['max_weight']} кг\n"
+        if not text:
+            text = "Пока нет рекордов. Начните тренироваться!"
+        
+        self.records_text.config(state="normal")
+        self.records_text.delete("1.0", tk.END)
+        self.records_text.insert("1.0", text)
+        self.records_text.config(state="disabled")
 
     # --- ПРОФИЛЬ ---
     def build_profile_tab(self):
