@@ -162,8 +162,11 @@ class FitnessApp:
         today = logic.get_day_nutrition(self.current_user_id)
         
         # КРУГ
-        card_cal = tk.Frame(scroll_frame, bg=CARD_COLOR, bd=0)
-        card_cal.pack(fill="x", pady=10, padx=15)
+        # Тень для карточки калорий
+        shadow_cal = tk.Frame(scroll_frame, bg="#D1D1D6", bd=0)
+        shadow_cal.pack(fill="x", pady=10, padx=15)
+        card_cal = tk.Frame(shadow_cal, bg=CARD_COLOR, bd=0)
+        card_cal.pack(fill="x", padx=1, pady=1)
         tk.Label(card_cal, text="Калории", font=("Helvetica", 14, "bold"), bg=CARD_COLOR).pack(anchor="w", padx=15, pady=(10, 0))
         
         canvas_cal = tk.Canvas(card_cal, width=200, height=200, bg=CARD_COLOR, highlightthickness=0)
@@ -183,8 +186,11 @@ class FitnessApp:
 
         # БЖУ
         n_prot, n_fat, n_carb = self.calculate_macros(self.norm_cal, profile["goal"])
-        card_macros = tk.Frame(scroll_frame, bg=CARD_COLOR, bd=0)
-        card_macros.pack(fill="x", pady=10, padx=15)
+        # Тень для карточки БЖУ
+        shadow_macros = tk.Frame(scroll_frame, bg="#D1D1D6", bd=0)
+        shadow_macros.pack(fill="x", pady=10, padx=15)
+        card_macros = tk.Frame(shadow_macros, bg=CARD_COLOR, bd=0)
+        card_macros.pack(fill="x", padx=1, pady=1)
         tk.Label(card_macros, text="БЖУ", font=("Helvetica", 14, "bold"), bg=CARD_COLOR).pack(anchor="w", padx=15, pady=(10, 5))
         
         self.draw_progress_bar(card_macros, "Белки", today['prot'], n_prot, "г")
@@ -196,8 +202,11 @@ class FitnessApp:
         schedule = logic.get_schedule(self.current_user_id)
         today_weekday = datetime.datetime.today().isoweekday()
         
-        card_sport = tk.Frame(scroll_frame, bg=CARD_COLOR, bd=0)
-        card_sport.pack(fill="x", pady=10, padx=15)
+        # Тень для карточки тренировки
+        shadow_sport = tk.Frame(scroll_frame, bg="#D1D1D6", bd=0)
+        shadow_sport.pack(fill="x", pady=10, padx=15)
+        card_sport = tk.Frame(shadow_sport, bg=CARD_COLOR, bd=0)
+        card_sport.pack(fill="x", padx=1, pady=1)
         
         if today_weekday in schedule:
             tk.Label(card_sport, text="🏋️ Тренировка сегодня", font=("Helvetica", 14, "bold"), bg=CARD_COLOR).pack(anchor="w", padx=15, pady=(10, 0))
