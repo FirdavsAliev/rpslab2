@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox
 import logic
 import db
 import styles
-from styles import BG_COLOR, CARD_COLOR, ACCENT_COLOR, GRAY_TEXT, TEXT_COLOR, PROGRESS_BG, PROGRESS_FILL, PROGRESS_OVER
+from styles import BG_COLOR, CARD_COLOR, ACCENT_COLOR, GRAY_TEXT, TEXT_COLOR, PROGRESS_BG, PROGRESS_FILL, PROGRESS_OVER, ERROR_COLOR, SUCCESS_COLOR
 
 class FitnessApp:
     def __init__(self, root):
@@ -22,8 +22,8 @@ class FitnessApp:
             widget.destroy()
 
     def _create_input(self, parent, label, show=None):
-        tk.Label(parent, text=label, bg=BG_COLOR, font=("Helvetica", 12)).pack(anchor="w", pady=(5, 0))
-        entry = tk.Entry(parent, font=("Helvetica", 14), bg="white", show=show if show else "")
+        tk.Label(parent, text=label, bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 12)).pack(anchor="w", pady=(5, 0))
+        entry = tk.Entry(parent, font=("Helvetica", 14), bg="white", fg=TEXT_COLOR, show=show if show else "")
         entry.pack(fill="x", pady=(2, 5), ipady=5)
         return entry
 
@@ -36,7 +36,7 @@ class FitnessApp:
         center_frame = tk.Frame(frame, bg=BG_COLOR)
         center_frame.pack(expand=True)
 
-        tk.Label(center_frame, text="Добро пожаловать\nв Fitness Tracker!", font=("Helvetica", 22, "bold"), bg=BG_COLOR, justify="center").pack(pady=(0, 40))
+        tk.Label(center_frame, text="Добро пожаловать\nв Fitness Tracker!", font=("Helvetica", 22, "bold"), bg=BG_COLOR, fg=TEXT_COLOR, justify="center").pack(pady=(0, 40))
         
         tk.Button(center_frame, text="Начать (Регистрация)", command=self.show_registration_screen, bg=ACCENT_COLOR, fg="white", font=("Helvetica", 14, "bold"), bd=0).pack(fill="x", ipady=10, pady=5)
         tk.Button(center_frame, text="У меня уже есть аккаунт", command=self.show_login_screen, bg="white", fg=ACCENT_COLOR, font=("Helvetica", 14), bd=1, relief="solid").pack(fill="x", ipady=10, pady=5)
@@ -46,7 +46,7 @@ class FitnessApp:
         self.clear()
         frame = tk.Frame(self.root, bg=BG_COLOR)
         frame.pack(expand=True, fill="both", padx=30, pady=50)
-        tk.Label(frame, text="Вход", font=("Helvetica", 24, "bold"), bg=BG_COLOR).pack(pady=(50, 30))
+        tk.Label(frame, text="Вход", font=("Helvetica", 24, "bold"), bg=BG_COLOR, fg=TEXT_COLOR).pack(pady=(50, 30))
         self.login_entry = self._create_input(frame, "Логин")
         self.pass_entry = self._create_input(frame, "Пароль", show="*")
         tk.Button(frame, text="Войти", command=self.do_login, bg=ACCENT_COLOR, fg="white", font=("Helvetica", 14, "bold"), bd=0).pack(fill="x", ipady=10, pady=10)
@@ -64,7 +64,7 @@ class FitnessApp:
         self.clear()
         frame = tk.Frame(self.root, bg=BG_COLOR)
         frame.pack(expand=True, fill="both", padx=30, pady=20)
-        tk.Label(frame, text="Создание профиля", font=("Helvetica", 20, "bold"), bg=BG_COLOR).pack(pady=(20, 10))
+        tk.Label(frame, text="Создание профиля", font=("Helvetica", 20, "bold"), bg=BG_COLOR, fg=TEXT_COLOR).pack(pady=(20, 10))
         
         self.reg_login = self._create_input(frame, "Придумайте логин")
         self.reg_pass = self._create_input(frame, "Придумайте пароль (мин. 6 симв.)", show="*")
@@ -73,14 +73,14 @@ class FitnessApp:
         self.reg_age = self._create_input(frame, "Возраст (лет)")
         self.reg_target_cal = self._create_input(frame, "Своя норма калорий (ккал) - необязательно")
 
-        tk.Label(frame, text="Пол", bg=BG_COLOR, font=("Helvetica", 12)).pack(anchor="w", pady=(5, 0))
+        tk.Label(frame, text="Пол", bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 12)).pack(anchor="w", pady=(5, 0))
         self.gender_var = tk.StringVar(value="муж")
         g_frame = tk.Frame(frame, bg=BG_COLOR)
         g_frame.pack(fill="x")
-        tk.Radiobutton(g_frame, text="Мужской", variable=self.gender_var, value="муж", bg=BG_COLOR).pack(side="left")
-        tk.Radiobutton(g_frame, text="Женский", variable=self.gender_var, value="жен", bg=BG_COLOR).pack(side="left")
+        tk.Radiobutton(g_frame, text="Мужской", variable=self.gender_var, value="муж", bg=BG_COLOR, fg=TEXT_COLOR).pack(side="left")
+        tk.Radiobutton(g_frame, text="Женский", variable=self.gender_var, value="жен", bg=BG_COLOR, fg=TEXT_COLOR).pack(side="left")
 
-        tk.Label(frame, text="Активность", bg=BG_COLOR, font=("Helvetica", 12)).pack(anchor="w", pady=(5, 0))
+        tk.Label(frame, text="Активность", bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 12)).pack(anchor="w", pady=(5, 0))
         self.activity_combo = ttk.Combobox(frame, values=["низкая", "средняя", "высокая"], state="readonly")
         self.activity_combo.current(1)
         self.activity_combo.pack(fill="x", pady=2)
@@ -117,8 +117,8 @@ class FitnessApp:
         self.clear()
         top = tk.Frame(self.root, bg=BG_COLOR, pady=15)
         top.pack(fill="x")
-        tk.Label(top, text="Мой день", font=("Helvetica", 20, "bold"), bg=BG_COLOR).pack(side="left", padx=15)
-        tk.Button(top, text="Выйти", command=self.show_welcome_screen, bg=BG_COLOR, fg="red", font=("Helvetica", 12), bd=0).pack(side="right", padx=15)
+        tk.Label(top, text="Мой день", font=("Helvetica", 20, "bold"), bg=BG_COLOR, fg=TEXT_COLOR).pack(side="left", padx=15)
+        tk.Button(top, text="Выйти", command=self.show_welcome_screen, bg=BG_COLOR, fg=ERROR_COLOR, font=("Helvetica", 12), bd=0).pack(side="right", padx=15)
 
         self.notebook = ttk.Notebook(self.root)
         self.notebook.pack(fill="both", expand=True)
@@ -162,12 +162,9 @@ class FitnessApp:
         today = logic.get_day_nutrition(self.current_user_id)
         
         # КРУГ
-        # Тень для карточки калорий
-        shadow_cal = tk.Frame(scroll_frame, bg="#D1D1D6", bd=0)
-        shadow_cal.pack(fill="x", pady=10, padx=15)
-        card_cal = tk.Frame(shadow_cal, bg=CARD_COLOR, bd=0)
-        card_cal.pack(fill="x", padx=1, pady=1)
-        tk.Label(card_cal, text="Калории", font=("Helvetica", 14, "bold"), bg=CARD_COLOR).pack(anchor="w", padx=15, pady=(10, 0))
+        card_cal = tk.Frame(scroll_frame, bg=CARD_COLOR, bd=0)
+        card_cal.pack(fill="x", pady=10, padx=15)
+        tk.Label(card_cal, text="Калории", font=("Helvetica", 14, "bold"), bg=CARD_COLOR, fg=TEXT_COLOR).pack(anchor="w", padx=15, pady=(10, 0))
         
         canvas_cal = tk.Canvas(card_cal, width=200, height=200, bg=CARD_COLOR, highlightthickness=0)
         canvas_cal.pack(pady=10)
@@ -186,12 +183,9 @@ class FitnessApp:
 
         # БЖУ
         n_prot, n_fat, n_carb = self.calculate_macros(self.norm_cal, profile["goal"])
-        # Тень для карточки БЖУ
-        shadow_macros = tk.Frame(scroll_frame, bg="#D1D1D6", bd=0)
-        shadow_macros.pack(fill="x", pady=10, padx=15)
-        card_macros = tk.Frame(shadow_macros, bg=CARD_COLOR, bd=0)
-        card_macros.pack(fill="x", padx=1, pady=1)
-        tk.Label(card_macros, text="БЖУ", font=("Helvetica", 14, "bold"), bg=CARD_COLOR).pack(anchor="w", padx=15, pady=(10, 5))
+        card_macros = tk.Frame(scroll_frame, bg=CARD_COLOR, bd=0)
+        card_macros.pack(fill="x", pady=10, padx=15)
+        tk.Label(card_macros, text="БЖУ", font=("Helvetica", 14, "bold"), bg=CARD_COLOR, fg=TEXT_COLOR).pack(anchor="w", padx=15, pady=(10, 5))
         
         self.draw_progress_bar(card_macros, "Белки", today['prot'], n_prot, "г")
         self.draw_progress_bar(card_macros, "Жиры", today['fat'], n_fat, "г")
@@ -202,17 +196,14 @@ class FitnessApp:
         schedule = logic.get_schedule(self.current_user_id)
         today_weekday = datetime.datetime.today().isoweekday()
         
-        # Тень для карточки тренировки
-        shadow_sport = tk.Frame(scroll_frame, bg="#D1D1D6", bd=0)
-        shadow_sport.pack(fill="x", pady=10, padx=15)
-        card_sport = tk.Frame(shadow_sport, bg=CARD_COLOR, bd=0)
-        card_sport.pack(fill="x", padx=1, pady=1)
+        card_sport = tk.Frame(scroll_frame, bg=CARD_COLOR, bd=0)
+        card_sport.pack(fill="x", pady=10, padx=15)
         
         if today_weekday in schedule:
-            tk.Label(card_sport, text="🏋️ Тренировка сегодня", font=("Helvetica", 14, "bold"), bg=CARD_COLOR).pack(anchor="w", padx=15, pady=(10, 0))
+            tk.Label(card_sport, text="🏋️ Тренировка сегодня", font=("Helvetica", 14, "bold"), bg=CARD_COLOR, fg=TEXT_COLOR).pack(anchor="w", padx=15, pady=(10, 0))
             tk.Label(card_sport, text=schedule[today_weekday], font=("Helvetica", 12), bg=CARD_COLOR, fg=ACCENT_COLOR).pack(anchor="w", padx=15, pady=(0, 10))
         else:
-            tk.Label(card_sport, text="💡 Совет дня", font=("Helvetica", 14, "bold"), bg=CARD_COLOR).pack(anchor="w", padx=15, pady=(10, 0))
+            tk.Label(card_sport, text="💡 Совет дня", font=("Helvetica", 14, "bold"), bg=CARD_COLOR, fg=TEXT_COLOR).pack(anchor="w", padx=15, pady=(10, 0))
             recs = logic.get_recommendations(self.current_user_id)
             tk.Label(card_sport, text="\n".join(recs), font=("Helvetica", 12), bg=CARD_COLOR, fg=GRAY_TEXT, justify="left").pack(anchor="w", padx=15, pady=(0, 10))
 
@@ -220,7 +211,7 @@ class FitnessApp:
         frame = tk.Frame(parent, bg=CARD_COLOR)
         frame.pack(fill="x", padx=15, pady=5)
         text = f"{label}: {current:.1f} / {target:.1f} {unit}"
-        tk.Label(frame, text=text, bg=CARD_COLOR, font=("Helvetica", 11)).pack(anchor="w")
+        tk.Label(frame, text=text, bg=CARD_COLOR, fg=TEXT_COLOR, font=("Helvetica", 11)).pack(anchor="w")
         canvas = tk.Canvas(frame, height=8, bg=PROGRESS_BG, highlightthickness=0)
         canvas.pack(fill="x", pady=(2, 5))
         percent = min(current / target, 1.0) if target > 0 else 0
@@ -240,27 +231,49 @@ class FitnessApp:
     def build_nutrition_tab(self):
         frame = tk.Frame(self.tab_nutrition, bg=BG_COLOR, padx=15, pady=15)
         frame.pack(fill="both", expand=True)
-        tk.Label(frame, text="Добавить еду", bg=BG_COLOR, font=("Helvetica", 14, "bold")).pack(anchor="w")
-        tk.Label(frame, text="Поиск продукта:", bg=BG_COLOR).pack(anchor="w")
+        tk.Label(frame, text="Добавить еду", bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 14, "bold")).pack(anchor="w")
+        tk.Label(frame, text="Поиск продукта:", bg=BG_COLOR, fg=TEXT_COLOR).pack(anchor="w")
         self.food_combo = ttk.Combobox(frame, font=("Helvetica", 12))
         self.food_combo.pack(fill="x", pady=5)
         self.food_combo.bind('<KeyRelease>', self.update_food_suggestions)
-        tk.Label(frame, text="Вес (грамм):", bg=BG_COLOR).pack(anchor="w")
-        self.weight_entry = tk.Entry(frame, font=("Helvetica", 14), bg="white")
+        tk.Label(frame, text="Вес (грамм):", bg=BG_COLOR, fg=TEXT_COLOR).pack(anchor="w")
+        self.weight_entry = tk.Entry(frame, font=("Helvetica", 14), bg="white", fg=TEXT_COLOR)
         self.weight_entry.pack(fill="x", pady=5, ipady=5)
         tk.Button(frame, text="Добавить в дневник", command=self.add_meal, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=5, ipady=8)
 
-        tk.Label(frame, text="Не нашли продукт? Добавьте свой (на 100 г):", bg=BG_COLOR, font=("Helvetica", 10, "italic")).pack(anchor="w", pady=(15,0))
+        tk.Label(frame, text="Не нашли продукт? Добавьте свой (на 100 г):", bg=BG_COLOR, fg=GRAY_TEXT, font=("Helvetica", 10, "italic")).pack(anchor="w", pady=(15,0))
+        
         f_frame = tk.Frame(frame, bg=BG_COLOR)
         f_frame.pack(fill="x", pady=5)
-        self.new_food_name = tk.Entry(f_frame, width=15, font=("Helvetica", 10)); self.new_food_name.insert(0, "Название"); self.new_food_name.pack(side="left", padx=2)
-        self.new_food_cal = tk.Entry(f_frame, width=5, font=("Helvetica", 10)); self.new_food_cal.insert(0, "Ккал"); self.new_food_cal.pack(side="left", padx=2)
-        self.new_food_prot = tk.Entry(f_frame, width=5, font=("Helvetica", 10)); self.new_food_prot.insert(0, "Б"); self.new_food_prot.pack(side="left", padx=2)
-        self.new_food_fat = tk.Entry(f_frame, width=5, font=("Helvetica", 10)); self.new_food_fat.insert(0, "Ж"); self.new_food_fat.pack(side="left", padx=2)
-        self.new_food_carb = tk.Entry(f_frame, width=5, font=("Helvetica", 10)); self.new_food_carb.insert(0, "У"); self.new_food_carb.pack(side="left", padx=2)
+
+        # Название
+        tk.Label(f_frame, text="Название:", bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 10)).grid(row=0, column=0, sticky="w")
+        self.new_food_name = tk.Entry(f_frame, width=12, font=("Helvetica", 10), bg="white", fg=TEXT_COLOR)
+        self.new_food_name.grid(row=1, column=0, padx=2, pady=2)
+
+        # Ккал
+        tk.Label(f_frame, text="Ккал:", bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 10)).grid(row=0, column=1, sticky="w")
+        self.new_food_cal = tk.Entry(f_frame, width=4, font=("Helvetica", 10), bg="white", fg=TEXT_COLOR)
+        self.new_food_cal.grid(row=1, column=1, padx=2, pady=2)
+
+        # Белки
+        tk.Label(f_frame, text="Б:", bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 10)).grid(row=0, column=2, sticky="w")
+        self.new_food_prot = tk.Entry(f_frame, width=4, font=("Helvetica", 10), bg="white", fg=TEXT_COLOR)
+        self.new_food_prot.grid(row=1, column=2, padx=2, pady=2)
+
+        # Жиры
+        tk.Label(f_frame, text="Ж:", bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 10)).grid(row=0, column=3, sticky="w")
+        self.new_food_fat = tk.Entry(f_frame, width=4, font=("Helvetica", 10), bg="white", fg=TEXT_COLOR)
+        self.new_food_fat.grid(row=1, column=3, padx=2, pady=2)
+
+        # Углеводы
+        tk.Label(f_frame, text="У:", bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 10)).grid(row=0, column=4, sticky="w")
+        self.new_food_carb = tk.Entry(f_frame, width=4, font=("Helvetica", 10), bg="white", fg=TEXT_COLOR)
+        self.new_food_carb.grid(row=1, column=4, padx=2, pady=2)
+
         tk.Button(frame, text="Сохранить свой продукт", command=self.add_custom_food, bg="gray", fg="white", bd=0).pack(fill="x", pady=5)
 
-        self.nutrition_summary = tk.Label(frame, text="", bg=CARD_COLOR, font=("Helvetica", 12), justify="left", padx=10, pady=10)
+        self.nutrition_summary = tk.Label(frame, text="", bg=CARD_COLOR, fg=TEXT_COLOR, font=("Helvetica", 12), justify="left", padx=10, pady=10)
         self.nutrition_summary.pack(fill="x", pady=10)
         self.update_nutrition_summary()
 
@@ -295,7 +308,7 @@ class FitnessApp:
     def add_custom_food(self):
         try:
             name = self.new_food_name.get().strip()
-            if not name or name == "Название":
+            if not name:
                 messagebox.showwarning("Внимание", "Введите название продукта")
                 return
             cal = float(self.new_food_cal.get() or 0)
@@ -305,11 +318,11 @@ class FitnessApp:
             logic.add_food(name, cal, prot, fat, carb)
             self.update_food_suggestions(None)
             messagebox.showinfo("Успех", f"Продукт '{name}' добавлен в базу!")
-            self.new_food_name.delete(0, tk.END); self.new_food_name.insert(0, "Название")
-            self.new_food_cal.delete(0, tk.END); self.new_food_cal.insert(0, "Ккал")
-            self.new_food_prot.delete(0, tk.END); self.new_food_prot.insert(0, "Б")
-            self.new_food_fat.delete(0, tk.END); self.new_food_fat.insert(0, "Ж")
-            self.new_food_carb.delete(0, tk.END); self.new_food_carb.insert(0, "У")
+            self.new_food_name.delete(0, tk.END)
+            self.new_food_cal.delete(0, tk.END)
+            self.new_food_prot.delete(0, tk.END)
+            self.new_food_fat.delete(0, tk.END)
+            self.new_food_carb.delete(0, tk.END)
         except Exception as e:
             messagebox.showerror("Ошибка", f"Проверьте данные: {str(e)}")
 
@@ -326,43 +339,43 @@ class FitnessApp:
         frame = tk.Frame(self.tab_workouts, bg=BG_COLOR, padx=15, pady=15)
         frame.pack(fill="both", expand=True)
 
-        tk.Button(frame, text="▶ Начать тренировку по шаблону", command=self.start_workout, bg="green", fg="white", font=("Helvetica", 14, "bold"), bd=0).pack(fill="x", pady=10, ipady=10)
+        tk.Button(frame, text="▶ Начать тренировку по шаблону", command=self.start_workout, bg=SUCCESS_COLOR, fg="white", font=("Helvetica", 14, "bold"), bd=0).pack(fill="x", pady=10, ipady=10)
 
-        tk.Label(frame, text="1. Добавить новое упражнение:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w")
-        self.ex_name = tk.Entry(frame, font=("Helvetica", 14), bg="white")
+        tk.Label(frame, text="1. Добавить новое упражнение:", bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w")
+        self.ex_name = tk.Entry(frame, font=("Helvetica", 14), bg="white", fg=TEXT_COLOR)
         self.ex_name.pack(fill="x", pady=5, ipady=5)
         tk.Button(frame, text="Добавить в справочник", command=self.create_exercise, bg="gray", fg="white", bd=0).pack(fill="x", pady=5, ipady=5)
 
-        tk.Label(frame, text="2. Создать шаблон тренировки:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10,0))
-        self.template_name = tk.Entry(frame, font=("Helvetica", 14), bg="white")
+        tk.Label(frame, text="2. Создать шаблон тренировки:", bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10,0))
+        self.template_name = tk.Entry(frame, font=("Helvetica", 14), bg="white", fg=TEXT_COLOR)
         self.template_name.pack(fill="x", pady=5, ipady=5)
         tk.Button(frame, text="Создать шаблон", command=self.create_template, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=5, ipady=5)
 
-        tk.Label(frame, text="3. Добавить упражнение в шаблон:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10,0))
-        tk.Label(frame, text="Выберите шаблон:", bg=BG_COLOR).pack(anchor="w")
+        tk.Label(frame, text="3. Добавить упражнение в шаблон:", bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10,0))
+        tk.Label(frame, text="Выберите шаблон:", bg=BG_COLOR, fg=TEXT_COLOR).pack(anchor="w")
         self.sel_template_combo = ttk.Combobox(frame, font=("Helvetica", 12), state="readonly")
         self.sel_template_combo.pack(fill="x", pady=2)
 
-        tk.Label(frame, text="Выберите упражнение:", bg=BG_COLOR).pack(anchor="w")
+        tk.Label(frame, text="Выберите упражнение:", bg=BG_COLOR, fg=TEXT_COLOR).pack(anchor="w")
         self.sel_ex_combo = ttk.Combobox(frame, font=("Helvetica", 12), state="readonly")
         self.sel_ex_combo.pack(fill="x", pady=2)
 
         p_frame = tk.Frame(frame, bg=BG_COLOR)
         p_frame.pack(fill="x", pady=5)
-        tk.Label(p_frame, text="Подходы:", bg=BG_COLOR).pack(side="left")
-        self.sets_entry = tk.Entry(p_frame, width=5, font=("Helvetica", 12)); self.sets_entry.insert(0, "3"); self.sets_entry.pack(side="left", padx=5)
-        tk.Label(p_frame, text="Повторы:", bg=BG_COLOR).pack(side="left")
-        self.reps_entry = tk.Entry(p_frame, width=5, font=("Helvetica", 12)); self.reps_entry.insert(0, "10"); self.reps_entry.pack(side="left", padx=5)
-        tk.Label(p_frame, text="Вес(кг):", bg=BG_COLOR).pack(side="left")
-        self.weight_entry_ex = tk.Entry(p_frame, width=5, font=("Helvetica", 12)); self.weight_entry_ex.pack(side="left", padx=5)
+        tk.Label(p_frame, text="Подходы:", bg=BG_COLOR, fg=TEXT_COLOR).pack(side="left")
+        self.sets_entry = tk.Entry(p_frame, width=5, font=("Helvetica", 12), bg="white", fg=TEXT_COLOR); self.sets_entry.insert(0, "3"); self.sets_entry.pack(side="left", padx=5)
+        tk.Label(p_frame, text="Повторы:", bg=BG_COLOR, fg=TEXT_COLOR).pack(side="left")
+        self.reps_entry = tk.Entry(p_frame, width=5, font=("Helvetica", 12), bg="white", fg=TEXT_COLOR); self.reps_entry.insert(0, "10"); self.reps_entry.pack(side="left", padx=5)
+        tk.Label(p_frame, text="Вес(кг):", bg=BG_COLOR, fg=TEXT_COLOR).pack(side="left")
+        self.weight_entry_ex = tk.Entry(p_frame, width=5, font=("Helvetica", 12), bg="white", fg=TEXT_COLOR); self.weight_entry_ex.pack(side="left", padx=5)
         tk.Button(frame, text="Добавить в выбранный шаблон", command=self.add_ex_to_template, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=10, ipady=8)
 
-        tk.Label(frame, text="4. Расписание:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10,0))
+        tk.Label(frame, text="4. Расписание:", bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10,0))
         self.schedule_combo = ttk.Combobox(frame, values=["Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота", "Воскресенье"], state="readonly")
         self.schedule_combo.pack(fill="x", pady=2)
         tk.Button(frame, text="Назначить выбранный шаблон на день", command=self.assign_schedule, bg=ACCENT_COLOR, fg="white", bd=0).pack(fill="x", pady=5, ipady=5)
 
-        self.schedule_label = tk.Label(frame, text="", bg=BG_COLOR, justify="left")
+        self.schedule_label = tk.Label(frame, text="", bg=BG_COLOR, fg=TEXT_COLOR, justify="left")
         self.schedule_label.pack(anchor="w", pady=(10,0))
 
         self.refresh_all_combos()
@@ -430,7 +443,7 @@ class FitnessApp:
         log_win.geometry("450x600")
         log_win.configure(bg=BG_COLOR)
 
-        tk.Label(log_win, text=f"Тренировка: {template_name}", font=("Helvetica", 16, "bold"), bg=BG_COLOR).pack(pady=15)
+        tk.Label(log_win, text=f"Тренировка: {template_name}", font=("Helvetica", 16, "bold"), bg=BG_COLOR, fg=TEXT_COLOR).pack(pady=15)
 
         canvas = tk.Canvas(log_win, bg=BG_COLOR, highlightthickness=0)
         scrollbar = ttk.Scrollbar(log_win, orient="vertical", command=canvas.yview)
@@ -444,16 +457,16 @@ class FitnessApp:
         for ex in exercises:
             frame = tk.Frame(scroll_frame, bg=CARD_COLOR, pady=10, padx=10)
             frame.pack(fill="x", pady=5, padx=10)
-            tk.Label(frame, text=ex["name"], font=("Helvetica", 12, "bold"), bg=CARD_COLOR).pack(anchor="w")
+            tk.Label(frame, text=ex["name"], font=("Helvetica", 12, "bold"), bg=CARD_COLOR, fg=TEXT_COLOR).pack(anchor="w")
             
             p_frame = tk.Frame(frame, bg=CARD_COLOR)
             p_frame.pack(fill="x", pady=5)
-            tk.Label(p_frame, text="Подходы:", bg=CARD_COLOR).pack(side="left")
-            sets_entry = tk.Entry(p_frame, width=4); sets_entry.insert(0, str(ex["sets"] or 3)); sets_entry.pack(side="left", padx=2)
-            tk.Label(p_frame, text="Повторы:", bg=CARD_COLOR).pack(side="left")
-            reps_entry = tk.Entry(p_frame, width=4); reps_entry.insert(0, str(ex["reps"] or 10)); reps_entry.pack(side="left", padx=2)
-            tk.Label(p_frame, text="Вес(кг):", bg=CARD_COLOR).pack(side="left")
-            weight_entry = tk.Entry(p_frame, width=5); weight_entry.insert(0, str(ex["weight"] or 0)); weight_entry.pack(side="left", padx=2)
+            tk.Label(p_frame, text="Подходы:", bg=CARD_COLOR, fg=TEXT_COLOR).pack(side="left")
+            sets_entry = tk.Entry(p_frame, width=4, bg="white", fg=TEXT_COLOR); sets_entry.insert(0, str(ex["sets"] or 3)); sets_entry.pack(side="left", padx=2)
+            tk.Label(p_frame, text="Повторы:", bg=CARD_COLOR, fg=TEXT_COLOR).pack(side="left")
+            reps_entry = tk.Entry(p_frame, width=4, bg="white", fg=TEXT_COLOR); reps_entry.insert(0, str(ex["reps"] or 10)); reps_entry.pack(side="left", padx=2)
+            tk.Label(p_frame, text="Вес(кг):", bg=CARD_COLOR, fg=TEXT_COLOR).pack(side="left")
+            weight_entry = tk.Entry(p_frame, width=5, bg="white", fg=TEXT_COLOR); weight_entry.insert(0, str(ex["weight"] or 0)); weight_entry.pack(side="left", padx=2)
 
             ex_name_current = ex["name"]
             def save_result(name=ex_name_current, s=sets_entry, r=reps_entry, w=weight_entry):
@@ -507,27 +520,26 @@ class FitnessApp:
         frame = tk.Frame(self.tab_analytics, bg=BG_COLOR, padx=15, pady=15)
         frame.pack(fill="both", expand=True)
 
-        tk.Label(frame, text="Выберите упражнение для графика:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w")
+        tk.Label(frame, text="Выберите упражнение для графика:", bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w")
         self.analytics_combo = ttk.Combobox(frame, font=("Helvetica", 12), state="readonly")
         self.analytics_combo.pack(fill="x", pady=5)
         
         exercises = logic.get_all_exercises()
-        print("СПИСОК УПРАЖНЕНИЙ:", [e["name"] for e in exercises])
         self.analytics_combo['values'] = [e["name"] for e in exercises]
         self.analytics_combo.bind("<<ComboboxSelected>>", self.draw_progress_chart)
 
         self.chart_canvas = tk.Canvas(frame, height=200, bg=CARD_COLOR, highlightthickness=0)
         self.chart_canvas.pack(fill="x", pady=10)
 
-        tk.Label(frame, text="🏆 Личные рекорды:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10, 0))
-        self.records_text = tk.Text(frame, height=6, bg=CARD_COLOR, bd=0, font=("Helvetica", 11))
+        tk.Label(frame, text="🏆 Личные рекорды:", bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10, 0))
+        self.records_text = tk.Text(frame, height=6, bg=CARD_COLOR, fg=TEXT_COLOR, bd=0, font=("Helvetica", 11))
         self.records_text.pack(fill="x", pady=5)
         self.update_records()
 
-        tk.Label(frame, text="📅 Статистика тренировок:", bg=BG_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10, 0))
+        tk.Label(frame, text="📅 Статистика тренировок:", bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 12, "bold")).pack(anchor="w", pady=(10, 0))
         done, planned = logic.get_plan_compliance(self.current_user_id)
         stats_text = f"Выполнено дней: {done}\nЗапланировано в расписании: {planned}\nПроцент: {done/planned*100 if planned > 0 else 0:.0f}%"
-        tk.Label(frame, text=stats_text, bg=CARD_COLOR, justify="left", padx=10, pady=10).pack(fill="x", pady=5)
+        tk.Label(frame, text=stats_text, bg=CARD_COLOR, fg=TEXT_COLOR, justify="left", padx=10, pady=10).pack(fill="x", pady=5)
 
     def draw_progress_chart(self, event=None):
         ex_name = self.analytics_combo.get()
@@ -584,11 +596,11 @@ class FitnessApp:
         self.p_height = self._add_input(frame, "Рост (см):", profile.get("height"))
         self.p_age = self._add_input(frame, "Возраст:", profile.get("age"))
         tk.Button(frame, text="Сохранить профиль", command=self.save_profile, bg=ACCENT_COLOR, fg="white", bd=0, font=("Helvetica", 12, "bold")).pack(fill="x", pady=10, ipady=8)
-        tk.Button(frame, text="Удалить аккаунт", command=self.delete_account, bg="white", fg="red", bd=1, relief="solid", font=("Helvetica", 12)).pack(fill="x", pady=10, ipady=8)
+        tk.Button(frame, text="Удалить аккаунт", command=self.delete_account, bg=ERROR_COLOR, fg="white", bd=0, font=("Helvetica", 12)).pack(fill="x", pady=10, ipady=8)
 
     def _add_input(self, parent, label, default_val):
-        tk.Label(parent, text=label, bg=BG_COLOR, font=("Helvetica", 12)).pack(anchor="w", pady=(10, 0))
-        entry = tk.Entry(parent, font=("Helvetica", 14), bg="white", bd=1, relief="solid")
+        tk.Label(parent, text=label, bg=BG_COLOR, fg=TEXT_COLOR, font=("Helvetica", 12)).pack(anchor="w", pady=(10, 0))
+        entry = tk.Entry(parent, font=("Helvetica", 14), bg="white", fg=TEXT_COLOR)
         if default_val: entry.insert(0, str(default_val))
         entry.pack(fill="x", pady=(5, 0), ipady=5)
         return entry
