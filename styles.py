@@ -20,3 +20,6 @@ FONT_SMALL = ("Helvetica", 10)
 PAD_SMALL = 5
 PAD_MEDIUM = 10
 PAD_LARGE = 15
+PROGRESS_BG = "#E5E5EA"    # Фон полоски
+PROGRESS_FILL = "#007AFF"  # Заполнение полоски
+PROGRESS_OVER = "#FF3B30"  # Если перебор
